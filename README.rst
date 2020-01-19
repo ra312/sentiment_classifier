@@ -16,4 +16,6 @@ conda 4.8.1
 # Recreate my conda environment
 conda create --name <env> --file conda_spec_file.txt
 
+conda activate <env>
 
+python sentiment_classifier.py
