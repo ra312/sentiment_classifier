@@ -1,7 +1,10 @@
 # there are three main steps:
 # 1. preprocessing
-# 2. word2vec embedding layer
+# 2. loading of GloVe
+# 2. keras sequential model = embedding+CNN
 # 3. training keras sequential model
+# 4. evaluation
+# 5. goodness of fit test
 
 GPL_lines = '\n'.join([
     "Wine reviews sentiment classification",
@@ -11,6 +14,7 @@ GPL_lines = '\n'.join([
     "details. "
 ])
 print(GPL_lines)
+
 import pandas as pd
 import os
 import numpy as np
@@ -189,12 +193,17 @@ def train_model(df):
                   optimizer='rmsprop',
                   metrics=['acc'])
 
-    model.fit(x_train, y_train,
+    history = model.fit(x_train, y_train,
               batch_size=128,
-              epochs=10,
+              epochs=4,
               validation_data=(x_val, y_val))
+    model.save(filepath = 'sentiment.h5', overwrite=True, save_format=True)
+    del model
+    with open('model.train_history', 'wb') as file_history:
+        pickle.dump(history.history, file_history)
 
+    return history
 
 if __name__ == '__main__':
     df = pre_processing()
-    train_model(df=df)
+    history = train_model(df=df)
