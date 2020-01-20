@@ -15,23 +15,24 @@ GPL_lines = '\n'.join([
 ])
 print(GPL_lines)
 
-import pandas as pd
 import os
+
+import nltk
 import numpy as np
-from tensorflow.keras.optimizers import Adam, SGD
-from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.preprocessing.text import Tokenizer
-from tensorflow.keras.preprocessing.sequence import pad_sequences
+import pandas as pd
+from nltk import word_tokenize
+from nltk.corpus import stopwords
+from nltk.tokenize.treebank import TreebankWordDetokenizer
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.initializers import Constant
+from tensorflow.keras.layers import Conv1D, MaxPooling1D, Embedding
+from tensorflow.keras.layers import Dense, Input, GlobalMaxPooling1D
 from tensorflow.keras.models import Model
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Input, GlobalMaxPooling1D
-from tensorflow.keras.layers import Conv1D, MaxPooling1D, Embedding
-from tensorflow.keras.initializers import Constant
-from sklearn.model_selection import train_test_split
-import nltk
-from nltk.tokenize.treebank import TreebankWordDetokenizer
-from nltk.corpus import stopwords
-from nltk import word_tokenize
+from tensorflow.keras.optimizers import Adam, SGD
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.utils import to_categorical
 
 # set parameters
 batch_size = 32
@@ -85,6 +86,7 @@ def pre_processing(filename='data.csv'):
             return 5
 
     train_data['label'] = train_data['continuous_target_1'].apply(points_to_class)
+
     return train_data[["review", "label"]]
 
 
@@ -146,12 +148,18 @@ def train_model(df):
     np.random.shuffle(indices)
     data = data[indices]
     labels = labels[indices]
-    num_validation_samples = int(VALIDATION_SPLIT * data.shape[0])
+    x_train, x_test, y_train, y_test = train_test_split(data, labels,
+                                                        test_size=0.2, random_state=1)
 
-    x_train = data[:-num_validation_samples]
-    y_train = labels[:-num_validation_samples]
-    x_val = data[-num_validation_samples:]
-    y_val = labels[-num_validation_samples:]
+    x_train, x_val, y_train, y_val = train_test_split(x_train, y_train,
+                                                      test_size=0.2, random_state=1)
+
+    # num_validation_samples = int(VALIDATION_SPLIT * data.shape[0])
+    #
+    # x_train = data[:-num_validation_samples]
+    # y_train = labels[:-num_validation_samples]
+    # x_val = data[-num_validation_samples:]
+    # y_val = labels[-num_validation_samples:]
 
     print('Preparing embedding matrix.')
 
@@ -186,7 +194,9 @@ def train_model(df):
     x = Conv1D(128, 5, activation='relu')(x)
     x = GlobalMaxPooling1D()(x)
     x = Dense(128, activation='relu')(x)
-    preds = Dense(6, activation='softmax')(x)
+    num_classes = len(set(df['label']))
+    num_classes = 6
+    preds = Dense(num_classes, activation='softmax')(x)
 
     model = Model(sequence_input, preds)
     model.compile(loss='categorical_crossentropy',
@@ -194,15 +204,17 @@ def train_model(df):
                   metrics=['acc'])
 
     history = model.fit(x_train, y_train,
-              batch_size=128,
-              epochs=4,
-              validation_data=(x_val, y_val))
-    model.save(filepath = 'sentiment.h5', overwrite=True, save_format=True)
-    del model
-    with open('model.train_history', 'wb') as file_history:
-        pickle.dump(history.history, file_history)
+                        batch_size=128,
+                        epochs=5,
+                        validation_data=(x_val, y_val))
+    model.save(filepath='sentiment.h5', overwrite=True, save_format=True)
+    # Evaluate the model on the test data using `evaluate`
+    print('\n# Evaluate on test data')
+    results = model.evaluate(x_test, y_test, batch_size=128)
+    print('test loss, test acc:', results)
 
     return history
+
 
 if __name__ == '__main__':
     df = pre_processing()
