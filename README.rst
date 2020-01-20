@@ -4,7 +4,9 @@ System Requirements
 
 # OS 
 ProductName:    Mac OS X
+
 ProductVersion: 10.14.4
+
 BuildVersion:   18E226
 
 #Python
