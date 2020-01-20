@@ -126,7 +126,7 @@ def get_embeddings_index():
 
 
 def train_model(df):
-    embeddings_index = get_embeddings_index()
+
     reviews = df['review']
     labels = df['label']
     num_words = len([word for sentence in reviews for word in sentence.split(' ')])
@@ -162,25 +162,29 @@ def train_model(df):
     # y_val = labels[-num_validation_samples:]
 
     print('Preparing embedding matrix.')
-
+    embeddings_index = get_embeddings_index()
     # prepare embedding matrix
     num_words = min(max_num_words, len(word_index) + 1)
-    embedding_matrix = np.zeros((num_words, EMBEDDING_DIM))
-    for word, i in word_index.items():
-        if i >= max_num_words:
-            continue
-        embedding_vector = embeddings_index.get(word)
-        if embedding_vector is not None:
-            # words not found in embedding index will be all-zeros.
-            embedding_matrix[i] = embedding_vector
+    # embedding_matrix = np.zeros((num_words, EMBEDDING_DIM))
+    # for word, i in word_index.items():
+    #     if i >= max_num_words:
+    #         continue
+    #     embedding_vector = embeddings_index.get(word)
+    #     if embedding_vector is not None:
+    #         # words not found in embedding index will be all-zeros.
+    #         embedding_matrix[i] = embedding_vector
 
     # load pre-trained word embeddings into an Embedding layer
     # note that we set trainable = False so as to keep the embeddings fixed
-    embedding_layer = Embedding(num_words,
+    # embedding_layer = Embedding(num_words,
+    #                             EMBEDDING_DIM,
+    #                             embeddings_initializer=Constant(embedding_matrix),
+    #                             input_length=MAX_SEQUENCE_LENGTH,
+    #                             trainable=False)
+    #
+    embedding_layer = Embedding(len(word_index) + 1,
                                 EMBEDDING_DIM,
-                                embeddings_initializer=Constant(embedding_matrix),
-                                input_length=MAX_SEQUENCE_LENGTH,
-                                trainable=False)
+                                input_length=MAX_SEQUENCE_LENGTH)
 
     print('Training model.')
 
