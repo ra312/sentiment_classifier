@@ -183,7 +183,7 @@ def train_model(df):
 
 
     text_classifier.fit(x_train,y_train, epochs = 5)
-    predicted_y = clf.predict(x_test)
+    predicted_y = text_classifier.predict(x_test)
     # Evaluate the best model with testing data.
     print(text_classifier.evaluate(x_test, y_test))
 
